@@ -1,1 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Chessboard</title>
+    <style>
+        .chessboard {
+            width: 400px;
+            height: 400px;
+            border: 2px solid #000;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+        }
 
+        .square {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .white {
+            background-color: #f0d9b5;
+        }
+
+        .black {
+            background-color: #b58863;
+        }
+
+        .highlighted {
+            background-color: yellow;
+        }
+
+        .piece {
+            width: 40px;
+            height: 40px;
+            background-size: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chessboard" id="chessboard"></div>
+
+    <script>
+        const chessboard = document.getElementById('chessboard');
+        let boardState = [
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
+        ];
+
+        let selectedPiece = null;
+        let possibleMoves = [];
+
+        const pieceImages = {
+            'R': 'pieces/wR', 'N': 'pieces/wN', 'B': 'pieces/wB', 'Q': 'pieces/wQ', 'K': 'pieces/wK', 'P': 'pieces/wP',
+            'r': 'pieces/bR', 'n': 'pieces/bN', 'b': 'pieces/bB', 'q': 'pieces/bQ', 'k': 'pieces/bK', 'p': 'pieces/bP'
+        };
+
+        function createBoard() {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    square.classList.add((row + col) % 2 === 0 ? 'white' : 'black');
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+
+                    const piece = boardState[row][col];
+                    if (piece) {
+                        const pieceDiv = document.createElement('div');
+                        pieceDiv.classList.add('piece');
+                        const imageUrl = `${pieceImages[piece]}.png`;
+                        console.log(imageUrl); // Log the URL
+                        pieceDiv.style.backgroundImage = `url(${imageUrl})`;
+                        square.appendChild(pieceDiv);
+                    }
+
+                    square.addEventListener('click', handleSquareClick);
+                    chessboard.appendChild(square);
+                }
+            }
+        }
+
+        function handleSquareClick(event) {
+            const row = parseInt(event.target.dataset.row);
+            const col = parseInt(event.target.dataset.col);
+            const piece = boardState[row][col];
+
+            if (selectedPiece) {
+                if (possibleMoves.some(move => move[0] === row && move[1] === col)) {
+                    movePiece(selectedPiece.row, selectedPiece.col, row, col);
+                } else {
+                    clearHighlights();
+                    selectedPiece = null;
+                }
+            } else if (piece !== '') {
+                selectedPiece = { row: row, col: col, piece: piece };
+                possibleMoves = getPossibleMoves(row, col);
+                highlightPossibleMoves();
+            }
+        }
+
+        function movePiece(startRow, startCol, endRow, endCol) {
+            boardState[endRow][endCol] = boardState[startRow][startCol];
+            boardState[startRow][startCol] = '';
+            clearHighlights();
+            selectedPiece = null;
+            updateBoard();
+        }
+
+        function getPossibleMoves(row, col) {
+            const piece = boardState[row][col];
+            const moves = [];
+
+            if (piece === 'P') {
+                if (row > 0 && boardState[row - 1][col] === '') {
+                    moves.push([row - 1, col]);
+                    if (row === 6 && boardState[row - 2][col] === '') {
+                        moves.push([row - 2, col]);
+                    }
+                }
+            } else if (piece === 'p') {
+                if (row < 7 && boardState[row + 1][col] === '') {
+                    moves.push([row + 1, col]);
+                    if (row === 1 && boardState[row + 2][col] === '') {
+                        moves.push([row + 2, col]);
+                    }
+                }
+            }
+
+            return moves;
+        }
+
+        function highlightPossibleMoves() {
+            possibleMoves.forEach(move => {
+                const square = document.querySelector(`.square[data-row="${move[0]}"][data-col="${move[1]}"]`);
+                square.classList.add('highlighted');
+            });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.highlighted').forEach(square => {
+                square.classList.remove('highlighted');
+            });
+        }
+
+        function updateBoard() {
+            const squares = document.querySelectorAll('.square');
+            squares.forEach(square => {
+                const row = parseInt(square.dataset.row);
+                const col = parseInt(square.dataset.col);
+                square.innerHTML = '';
+
+                const piece = boardState[row][col];
+                if (piece) {
+                    const pieceDiv = document.createElement('div');
+                    pieceDiv.classList.add('piece');
+                    const imageUrl = `${pieceImages[piece]}.png`;
+                    console.log(imageUrl); // Log the URL
+                    pieceDiv.style.backgroundImage = `url(${imageUrl})`;
+                    square.appendChild(pieceDiv);
+                }
+            });
+        }
+
+        createBoard();
+    </script>
+
+</body>
+</html>
